@@ -1,6 +1,0 @@
-INFO: [VRFC 10-2263] Analyzing Verilog file "D:/Major_project/LLM_RTL/Normalization/matrix_multi_norm.v" into library xil_defaultlib
-INFO: [VRFC 10-311] analyzing module matrix_multi_norm
-ERROR: [VRFC 10-3642] port 'A' must not be declared to be an array [D:/Major_project/LLM_RTL/Normalization/matrix_multi_norm.v:2]
-ERROR: [VRFC 10-3642] port 'B' must not be declared to be an array [D:/Major_project/LLM_RTL/Normalization/matrix_multi_norm.v:3]
-ERROR: [VRFC 10-3642] port 'C' must not be declared to be an array [D:/Major_project/LLM_RTL/Normalization/matrix_multi_norm.v:4]
-ERROR: [VRFC 10-2865] module 'matrix_multi_norm' ignored due to previous errors [D:/Major_project/LLM_RTL/Normalization/matrix_multi_norm.v:1]
