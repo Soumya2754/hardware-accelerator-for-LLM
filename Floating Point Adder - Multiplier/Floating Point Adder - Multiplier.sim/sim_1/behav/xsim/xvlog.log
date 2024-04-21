@@ -1,0 +1,8 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "D:/Major_project/LLM_RTL/Floating point adder multiplier/fixed_adder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module fixed_adder
+INFO: [VRFC 10-2263] Analyzing Verilog file "D:/Major_project/LLM_RTL/Floating point adder multiplier/fixed_multi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module fixed_multi
+INFO: [VRFC 10-2263] Analyzing Verilog file "D:/Major_project/LLM_RTL/Floating point adder multiplier/Floating point adder multiplier.srcs/sources_1/new/float_multi.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module float_multi
+INFO: [VRFC 10-2263] Analyzing Verilog file "D:/Major_project/LLM_RTL/Floating point adder multiplier/Floating point adder multiplier.srcs/sim_1/new/operator_core.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module operator_core
