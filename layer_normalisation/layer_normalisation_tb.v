@@ -1,28 +1,55 @@
-module layer_normalization_inference (
-    input [7:0] input_tensor [0:2], // Input tensor (3x8) represented as 1D array
-    output reg [15:0] output_tensor [0:2] // Normalized output tensor (3x16)
-);
+interface dut_if;
+    logic clk;
+    logic [7:0] input_tensor[2:0];
+    logic [15:0] output_tensor[2:0];
+endinterface
 
-// Constants for mean, variance, gamma, beta, epsilon, and precalculated constants
-localparam [7:0] MEAN[0:2] = '{8'h80, 8'h80, 8'h80};              // Example mean values
-localparam [7:0] VARIANCE[0:2] = '{8'h40, 8'h40, 8'h40};          // Example variance values
-localparam [7:0] GAMMA[0:2] = '{8'hC0, 8'hC0, 8'hC0};             // Example scale parameters
-localparam [7:0] BETA[0:2] = '{8'h40, 8'h40, 8'h40};              // Example shift parameters
-localparam [7:0] EPSILON = 8'h01;                                  // Small constant epsilon
-localparam [7:0] GAMMA_OVER_SQRT_VARIANCE[0:2] = '{8'h48, 8'h48, 8'h48}; // Pre-calculated constants
+module layer_normalization_tb;
 
-integer i;
-reg [15:0] normalized_feature;
+    // Parameters
+    localparam int WIDTH = 8;
+    localparam int SIZE = 3;
 
-// Layer Normalization operation
-always @* begin
-    for (i = 0; i < 3; i = i + 1) begin
-        // Normalize the input tensor using the pre-calculated parameters
-        normalized_feature = (input_tensor[i] - MEAN[i]) * GAMMA_OVER_SQRT_VARIANCE[i] + BETA[i];
+    // Declare interface signals
+    dut_if dut_intf;
+
+    // Instantiate DUT
+    layer_normalization_inference dut (
+        .clk(dut_intf.clk),
+        .input_tensor(dut_intf.input_tensor),
+        .output_tensor(dut_intf.output_tensor)
+    );
+
+    // Clock generation
+    always #5 dut_intf.clk = ~dut_intf.clk;
+
+    // Testbench stimulus
+    initial begin
+        // Initialize inputs
+        foreach (dut_intf.input_tensor[i]) begin
+            dut_intf.input_tensor[i] = $urandom_range(0, 255); // Random input values (0-255)
+        end
+
+        // Display initial input
+        $display("Input tensor:");
+        foreach (dut_intf.input_tensor[i]) begin
+            $write("%d ", dut_intf.input_tensor[i]);
+        end
+        $display("");
+
+        // Wait for a few clock cycles
+        #10;
+
+        // Display output after normalization
+        $display("Output tensor:");
+        foreach (dut_intf.output_tensor[i]) begin
+            $write("%d ", dut_intf.output_tensor[i]);
+        end
+        $display("");
         
-        // Store the normalized feature in the output tensor
-        output_tensor[i] = normalized_feature;
+        // Stop simulation
+        $stop;
     end
-end
 
 endmodule
+
