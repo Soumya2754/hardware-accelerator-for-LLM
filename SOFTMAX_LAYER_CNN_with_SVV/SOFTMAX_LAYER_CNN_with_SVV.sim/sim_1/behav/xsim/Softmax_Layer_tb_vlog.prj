@@ -1,0 +1,22 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"../../../../Accumulator1.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/Softmax_Layer.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/Xncalculation.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/add.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/maxValue.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/mul.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/reciporical.v" \
+"../../../../SOFTMAX_LAYER_CNN_with_SVV.srcs/sources_1/new/term.v" \
+
+sv xil_defaultlib  \
+"../../../../exponential.sv" \
+
+verilog xil_defaultlib  \
+"../../../../Softmax_Layer_tb.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort
