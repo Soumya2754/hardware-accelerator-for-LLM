@@ -9,7 +9,7 @@ module layer_normalization_tb;
     // Define interface
     interface norm;
         logic clk = 1'b0;
-        logic [7:0] input_tensor[0:SIZE-1]; // Change index range to match SIZE
+        logic [15:0] input_tensor[0:SIZE-1]; // Change index range to match SIZE
         logic [15:0] output_tensor[0:SIZE-1]; // Change index range to match SIZE
     endinterface
 
@@ -27,15 +27,19 @@ module layer_normalization_tb;
     always #5 norm_intf.clk = ~norm_intf.clk;
 
     // Testbench stimulus
-    initial begin
+    initial 
+    begin
         // Initialize inputs
-        for (int i = 0; i < SIZE; i = i + 1) begin
+        for (int i = 0; i < SIZE; i = i + 1) 
+        begin
             norm_intf.input_tensor[i] = $urandom_range(0, 255); // Random input values (0-255)
         end
 
         // Display initial input
         $display("Input tensor:");
-        for (int i = 0; i < SIZE; i = i + 1) begin
+        
+        for (int i = 0; i < SIZE; i = i + 1) 
+        begin
             $write("%d ", norm_intf.input_tensor[i]);
         end
         $display("");
