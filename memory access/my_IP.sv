@@ -26,6 +26,9 @@ module my_IP (
     logic [2:0]                      awprot;       // Write protection signals
     logic [4:0]                      arcache;      // Read cacheability hints
     logic [4:0]                      awcache;      // Write cacheability hints
+    logic [31:0] register [0:65535]; // Array of registers, each 32 bits wide, 65536 registers
+    logic [31:0] memory [0:1048575]; // Array of memory locations, each 32 bits wide, 1048576 memory locations
+
     
     // Translation context descriptor
     typedef struct {
@@ -81,7 +84,7 @@ module my_IP (
         end
         else begin
             // Set ACE signals for highest security state
-            arprot <= 3'b111;       // Read protection signals: Highest security
+                        arprot <= 3'b111;       // Read protection signals: Highest security
             awprot <= 3'b111;       // Write protection signals: Highest security
             arcache <= 5'b00100;    // Read cacheability hints: Normal Non-cacheable Bufferable
             awcache <= 5'b00100;    // Write cacheability hints: Normal Non-cacheable Bufferable
@@ -92,6 +95,7 @@ module my_IP (
     always_ff @(posedge clk) begin
         if (!rst) begin
             smmu_req <= 'b0;
+            smmu_valid <= 'b0;
         end
         else begin
             smmu_req <= 1'b1;
@@ -99,21 +103,46 @@ module my_IP (
             smmu_addr <= va;
             smmu_data_in <= data_in;
             smmu_size <= 2'b10; // Assuming 32 bytes transaction size
+            smmu_valid <= 1'b1;
         end
     end
     
     // Simulate SMMU response
-    always_ff @(posedge clk) begin
-        if (smmu_req && smmu_valid) begin
-            if (smmu_op == 3'b000) begin // Read operation
-                data_out <= smmu_data_out;
-                resp <= smmu_resp;
+    always_ff @(posedge clk) 
+    begin
+        if (smmu_req && smmu_valid) 
+        begin
+            if (smmu_op == 3'b000) 
+            begin // Read operation
+                // Perform read operation simulation
+                smmu_data_out <= 32'h12345678; // Example data read
+                smmu_resp <= 2'b00; // OKAY response for read operation
             end
-            else begin // Write operation
-                // Logic for write operation response
-                resp <= 2'b00; // OKAY response for simplicity, adjust as needed
+            else 
+            begin // Write operation
+                // Perform write operation simulation
+                // Here, you would update memory or register based on smmu_addr and smmu_data_in
+                // For example:
+                if (smmu_addr == 32'h87654321) 
+                begin
+                    // Update register at address 32'h87654321 with smmu_data_in
+                    // For simplicity, just assign smmu_data_in to a register value
+                    register[smmu_addr] <= smmu_data_in;
+                end
+                else 
+                begin
+                    // Update memory at address smmu_addr with smmu_data_in
+                    // For simplicity, just assign smmu_data_in to a memory location
+                    memory[smmu_addr] <= smmu_data_in;
+                end
+                smmu_resp <= 2'b00; // OKAY response for write operation
             end
-        end
-    end
+         end
+     end
+
+
+    // Assign outputs
+    assign data_out = smmu_data_out;
+    assign resp = smmu_resp;
 
 endmodule
