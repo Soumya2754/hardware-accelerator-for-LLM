@@ -26,28 +26,25 @@ begin
         smmu_valid <= 1'b0;
         smmu_addr <= 32'b0;
         smmu_data_in <= 32'b0;
+      	data_out <= 32'b0;
     end
-    else if (req_valid) 
+  else if (req_valid) 
     begin
         smmu_valid <= 1'b1;
         smmu_addr <= va;
-        smmu_data_in <= data_in;
+      if(write_req) 
+        begin
+        	smmu_data_in <= data_in;
+      	end
+      else if (smmu_valid && !write_req && smmu_resp == 0)
+    begin
+        data_out <= smmu_data_out;
+    end
     end
     else 
     begin
         smmu_valid <= 1'b0;
-    end
-end
-
-always @(posedge clk or posedge rst)
-begin
-    if (rst)
-    begin
-        data_out <= 32'b0;
-    end
-    else if (smmu_valid && write_req && smmu_resp == 0)
-    begin
-        data_out <= smmu_data_out;
+      	data_out <= data_out;
     end
 end
 
