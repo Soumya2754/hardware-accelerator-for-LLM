@@ -57,8 +57,10 @@ module memory_wrapper_tb;
         va = 32'h2000;
         write_req = 1;
         data_in = 32'h12345678;
-        write_data = data_in;
-        #200; // Wait for 20 time units
+        #20;
+        write_data = dut.smmu_data_in;
+      	dut.smmu_resp = 0;
+        #20; // Wait for 20 time units
 
         // Check resp for write operation
         if (resp != 0) 
@@ -69,15 +71,16 @@ module memory_wrapper_tb;
         begin
             $display("Pass: Write operation successful. resp = %h", resp);
         end
-
-        dut.smmu_resp = 0;
+		dut.smmu_resp = 1;
+        
 
         // Test case 3: Read operation to verify write
         req_valid = 1;
         va = 32'h2000;
         write_req = 0;
         dut.smmu_data_out = write_data;
-        #200; // Wait for 20 time units
+      	dut.smmu_resp = 0;
+        #20; // Wait for 20 time units
 
         // Check data_out and resp for read operation
         if (data_out != 32'h12345678 || resp != 0) 
@@ -95,5 +98,8 @@ module memory_wrapper_tb;
     begin
         #500 $finish; // Stop simulation
     end
-
+	initial begin
+      $dumpfile("dump.vcd");
+      $dumpvars;
+    end
 endmodule
