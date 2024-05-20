@@ -3,7 +3,7 @@
 module add (
     input [15:0] A_FP, 
     input [15:0] B_FP,
-    output [15:0] out
+    output reg [15:0] out
 ); 
     reg       sign; 
     reg [4:0] exponent; 
@@ -120,9 +120,14 @@ module add (
             end
             mantissa = (fract_a == 0 && fract_b == 0) ? 11'b0 : fract_c[10:0];
         end
-        assign out[15] = sign;
-        assign out[14:10] = exponent;
-        assign out[9:0] = mantissa; 
-    end
+        
+   end
+   
+   always@(*)
+        begin
+         out[15] = sign;
+         out[14:10] = exponent;
+         out[9:0] = mantissa; 
+        end
+        
 endmodule
-
