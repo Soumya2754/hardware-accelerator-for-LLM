@@ -1,0 +1,391 @@
+`timescale 1ns / 1ps
+
+module instruction_decoder_tb;
+
+    // Parameters
+    parameter CLK_PERIOD = 10; // Clock period in ns
+
+    // Signals
+    reg clk;
+    reg rst_n;
+    reg [2:0] instruction;
+    wire [15:0] A [0:1023];
+    reg [15:0] B [0:1023];
+    reg [15:0] C [0:1023];
+    reg [15:0] layer_norm_input [0:1023]; // Wire for layer normalization input tensor
+    reg [15:0] num1, num2, num_1, num_2;
+    wire [15:0] result;
+    wire overflow; //overflow flag
+    wire zero; //zero flag
+    wire NaN; //Not a Number flag
+    wire precisionLost;
+    
+    // Signals for float_add and float_multi
+    reg [9:0] fra1, fra2, fra_1, fra_2;
+    reg sign1, sign2, sign_1, sign_2;
+    reg [4:0] exp1, exp2, exp_1, exp_2;
+    reg [15:0] result_expected_add, result_expected_multi;
+    wire [15:0] result_add, num1_add, num2_add;
+    wire [15:0] result_multi, num1_multi, num2_multi;
+    wire overflow_add, zero_add, nan_add, precisionLost_add;
+    wire overflow_multi, zero_multi, nan_multi, precisionLost_multi;
+    wire [9:0] res_fra_add, res_fra_multi, expected_fra_add, expected_fra_multi;
+    wire res_sign_add, res_sign_multi, expected_sign_add, expected_sign_multi;
+    wire [4:0] res_exp_add, res_exp_multi, expected_exp_add, expected_exp_multi;
+    
+    // Initial values for floating-point addition simulation
+    reg [15:0] initial_value_for_num1_add;
+    reg [15:0] initial_value_for_num2_add;
+    reg [15:0] initial_value_for_result_expected_add;
+    
+    // Initial values for floating-point multiplication simulation
+    reg [15:0] initial_value_for_num1_multi;
+    reg [15:0] initial_value_for_num2_multi;
+    reg [15:0] initial_value_for_result_expected_multi;
+    
+    // Instantiate the module under test
+    instruction_decoder dut (
+        .clk(clk),
+        .rst_n(rst_n),
+        .instruction(instruction),
+        .A(A),
+        .B(B),
+        .C(C),
+        .num_1(num_1),
+        .num_2(num_2),
+        .num1(num1),
+        .num2(num2),
+        //.result(result),
+        .overflow(overflow),
+        .zero(zero),
+        .NaN(NaN),
+        .precisionLost(precisionLost)
+    );
+    
+    // Connect layer normalization input tensor to the DUT
+    assign dut.layer_norm_inst.input_tensor = layer_norm_input;
+
+    // Clock generation
+    always #((CLK_PERIOD / 2)) clk = ~clk;
+    
+    // Assignments for floating-point addition
+    assign num1 = {sign1, exp1, fra1};
+    assign num2 = {sign2, exp2, fra2};
+    assign {res_sign_add, res_exp_add, res_fra_add} = result_add;
+    assign num1_add = initial_value_for_num1_add;
+    assign num2_add = initial_value_for_num2_add;
+    assign {expected_sign_add, expected_exp_add, expected_fra_add} = result_expected_add;
+
+    // Assignments for floating-point multiplication
+    assign num_1 = {sign_1, exp_1, fra_1};
+    assign num_2 = {sign_2, exp_2, fra_2};
+    assign {res_sign_multi, res_exp_multi, res_fra_multi} = result_multi;
+    assign num1_multi = initial_value_for_num1_multi;
+    assign num2_multi = initial_value_for_num2_multi;
+    assign {expected_sign_multi, expected_exp_multi, expected_fra_multi} = result_expected_multi;
+
+    // Initial stimulus
+    initial begin
+        clk = 0;
+        rst_n = 0;
+        instruction = 0;
+
+        // Initialize B and C matrices with some test data
+        initialize_matrices();
+
+        #100; // Wait for 100 time units
+        rst_n = 1;
+        #100; // Wait for 100 time units
+
+        // Test case 1: Matrix Multiplication
+        instruction = 3'b000;
+        #50; // Wait for the operation to complete
+
+        // Verify matrix multiplication results
+        verify_matrix_multiplication();
+
+        // Test case 2: Layer Normalization
+        instruction = 3'b001;
+        #50;initialize_layer_norm_input(A);
+
+        // Verify layer normalization results
+        #50 verify_layer_normalization();
+
+        // Test case 3: Floating-point Addition Simulation
+        instruction = 3'b010;
+        run_float_multi_sim; #50;
+        
+        instruction = 3'b011;
+        run_float_add_sim; #50;
+                
+    end
+    initial 
+    begin
+        #2000 $finish; // Stop simulation
+    end
+    // Task to initialize B and C matrices
+    task initialize_matrices;
+        integer i;
+        begin
+            for (i = 0; i < 1024; i = i + 1) begin
+                B[i] = i; // Example initialization, change as needed
+                C[i] = 1024 - i; // Example initialization, change as needed
+            end
+        end
+    endtask
+
+    // Task to verify matrix multiplication result
+    task verify_matrix_multiplication;
+        integer i, j, k;
+        reg [15:0] expected_value;
+        reg [15:0] temp_sum;
+        begin
+            for (i = 0; i < 16; i = i + 1) begin
+                for (j = 0; j < 16; j = j + 1) begin
+                    temp_sum = 0;
+                    for (k = 0; k < 16; k = k + 1) begin
+                        temp_sum = temp_sum + B[i*32 + k] * C[k*32 + j];
+                    end
+                    expected_value = temp_sum;
+                    if (A[i*16 + j] != expected_value) begin
+                        $display("Error: A[%0d][%0d] = %h, expected = %h", i, j, A[i*16 + j], expected_value);
+                    end else begin
+                        $display("Pass: A[%0d][%0d] = %h", i, j, A[i*16 + j]);
+                    end
+                end
+            end
+        end
+    endtask
+
+    // Task to initialize layer normalization input tensor
+    task initialize_layer_norm_input;
+        input [15:0] D [0:1023];    
+        integer i;
+        begin
+            for (i = 0; i < 1024; i = i + 1) begin
+                layer_norm_input[i] = D[i];
+            end
+        end
+    endtask
+
+    // Task to verify layer normalization result
+    task verify_layer_normalization;
+        integer i;
+        reg [15:0] expected_value;
+        begin
+            // Example calculation for expected values; replace with your logic
+            for (i = 0; i < 1024; i = i + 1) begin
+                expected_value = (layer_norm_input[i] - dut.layer_norm_inst.MEAN[i]) * dut.layer_norm_inst.GAMMA_OVER_SQRT_VARIANCE[i] + dut.layer_norm_inst.BETA[i];
+                if (dut.layer_norm_inst.output_tensor[i] != expected_value) begin
+                    $display("Error: output_tensor[%0d] = %h, expected = %h", i, dut.layer_norm_inst.output_tensor[i], expected_value);
+                end else begin
+                    $display("Pass: output_tensor[%0d] = %h", i, dut.layer_norm_inst.output_tensor[i]);
+                end
+            end
+        end
+    endtask
+    
+    // Task to run floating-point addition simulation
+    task run_float_add_sim;
+        begin
+        // Initialize values for floating-point addition simulation
+        initial_value_for_num1_add = 16'h4000; // Represents 2.0 in IEEE 754 format (binary: 0100000000000000)
+        initial_value_for_num2_add = 16'h3C00; // Represents 1.0 in IEEE 754 format (binary: 0011110000000000)
+        initial_value_for_result_expected_add = 16'h4200; // Represents 3.0 in IEEE 754 format (binary: 0100001000000000)
+
+        // Test cases for floating-point addition simulation
+        // Test case 1
+        {sign1, exp1, fra1} = initial_value_for_num1_add;
+        {sign2, exp2, fra2} = initial_value_for_num2_add;
+        result_expected_add = initial_value_for_result_expected_add;
+        #100;
+        // Test case 2
+        {sign1, exp1, fra1} = 16'h00e0;
+        {sign2, exp2, fra2} = 16'h5060;
+        result_expected_add = 16'h5060;
+        #100;
+        // Test case 3
+        {sign1, exp1, fra1} = 16'h29a8;
+        {sign2, exp2, fra2} = 16'he1f9;
+        result_expected_add = 16'he1f9;
+        #100;
+        // Test case 4
+            {sign1, exp1, fra1} = 16'h54a5;
+            {sign2, exp2, fra2} = 16'h1cc0;
+            result_expected_add = 16'h54a5;
+            #100;
+            // Test case 5
+            {sign1, exp1, fra1} = 16'h00b8;
+            {sign2, exp2, fra2} = 16'h0080;
+            result_expected_add = 16'h0138;
+            #100;
+            // Test case 6: Addition with precision lost
+            sign1 = 0;
+            sign2 = 0;
+            exp1 = 21;
+            exp2 = 14;
+            fra1 = 10'b1010010100;
+            fra2 = 10'b1100110011;
+            result_expected_add = 16'h54a9;
+            #100;
+            // Test case 7: Addition with same sign and no precision lost
+            sign1 = 1;
+            sign2 = 1;
+            exp1 = 13;
+            exp2 = 13;
+            fra1 = 10'b00001100;
+            fra2 = 10'b11101100;
+            result_expected_add = 16'h2b00;
+            #100;
+            // Test case 8: Addition different signs without precision lost
+            sign1 = 1;
+            sign2 = 0;
+            exp1 = 30;
+            exp2 = 30;
+            fra1 = 10'b10101010;
+            fra2 = 10'b10101100;
+            result_expected_add = 16'h5400;
+            #100;
+            // Test case 9: Zero flag
+            sign1 = 1;
+            sign2 = 0;
+            exp1 = 25;
+            exp2 = 25;
+            fra1 = 10'b10011101;
+            fra2 = 10'b10011101;
+            result_expected_add = 16'h8000;
+            #100;
+            // Test case 10: NaN flag
+            sign1 = 0;
+            sign2 = 0;
+            exp1 = 5'b10001;
+            exp2 = 5'b11111;
+            fra1 = 10'b11111111;
+            fra2 = 10'b11111111;
+            result_expected_add = 16'h7cff;
+            #100;
+            // Test case 11: Overflow flag
+            sign1 = 0;
+            sign2 = 0;
+            exp1 = 5'b11110;
+            exp2 = 5'b11110;
+            fra1 = 10'b1111111111;
+            fra2 = 10'b1111111111;
+            result_expected_add = 16'h7c00;
+            #100;
+            // Test case 12: Overflow flag
+            sign1 = 0;
+            sign2 = 0;
+            exp1 = 5'b11111;
+            exp2 = 5'b10010;
+            fra1 = 10'b0000000000;
+            fra2 = 10'b1110000011;
+            result_expected_add = 16'h7c00;
+            #100;
+        end
+    endtask
+
+    // Task to run floating-point multiplication simulation
+    task run_float_multi_sim;
+        begin
+            // Initialize values for floating-point multiplication simulation
+            initial_value_for_num1_multi = 16'h4000; // Represents 2.0 in IEEE 754 format (binary: 0100000000000000)
+            initial_value_for_num2_multi = 16'h3C00; // Represents 1.0 in IEEE 754 format (binary: 0011110000000000)
+            initial_value_for_result_expected_multi = 16'h3F80; // Represents 1.0 in IEEE 754 format (binary: 0011111110000000)
+    
+            // Test cases for floating-point multiplication simulation
+            // Test case 1
+            {sign_1, exp_1, fra_1} = initial_value_for_num1_multi;
+            {sign_2, exp_2, fra_2} = initial_value_for_num2_multi;
+            result_expected_multi = initial_value_for_result_expected_multi;
+            #100;
+            // Test case 2
+            {sign_1, exp_1, fra_1} = 16'h4689;
+            {sign_2, exp_2, fra_2} = 16'h0025;
+            result_expected_multi = 16'h00f2;
+            #100;
+            // Test case 3
+            {sign_1, exp_1, fra_1} = 16'h4489;
+            {sign_2, exp_2, fra_2} = 16'h001d;
+            result_expected_multi = 16'h0084;
+            #100;
+            // Test case 4: Buggy case
+                {sign_1, exp_1, fra_1} = 16'h8216;
+                {sign_2, exp_2, fra_2} = 16'h20be;
+                result_expected_multi = 16'h8004;
+                #100;
+                // Test case 5: Multiplication with precision lost
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 21;
+                exp_2 = 4;
+                fra_1 = 10'b10100101;
+                fra_2 = 10'b11001100;
+                result_expected_multi = 16'h2992;
+                #100;
+                // Test case 6: Multiplication without precision lost
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 4;
+                exp_2 = 4;
+                fra_1 = 10'b10100000;
+                fra_2 = 10'b01100000;
+                result_expected_multi = 16'h0005;
+                #100;
+                // Test case 7: Multiplication without precision lost different signs
+                sign_1 = 1;
+                sign_2 = 0;
+                exp_1 = 16;
+                exp_2 = 7;
+                fra_1 = 10'b10110000;
+                fra_2 = 10'b11000000;
+                result_expected_multi = 16'ha191;
+                #100;
+                // Test case 8: Multiplication with Zero
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 16;
+                exp_2 = 0;
+                fra_1 = 10'b10110000;
+                fra_2 = 10'b00000000;
+                result_expected_multi = 16'h0000;
+                #100;
+                // Test case 9: Multiplication with Infinite
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 16;
+                exp_2 = 5'b11111;
+                fra_1 = 10'b10110000;
+                fra_2 = 10'b00000000;
+                result_expected_multi = 16'h7c00;
+                #100;
+                // Test case 10: Overflow
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 16;
+                exp_2 = 20;
+                fra_1 = 10'b10110000;
+                fra_2 = 10'b01011000;
+                result_expected_multi = 16'h5517;
+                #100;
+                // Test case 11: Multiplication of 1 subnormal, 1 normal
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 0;
+                exp_2 = 20;
+                fra_1 = 10'b11100000;
+                fra_2 = 10'b01100000;
+                result_expected_multi = 16'h0fa8;
+                #100;
+                // Test case 12: Multiplication of 2 subnormal
+                sign_1 = 0;
+                sign_2 = 0;
+                exp_1 = 0;
+                exp_2 = 0;
+                fra_1 = 10'b10111000;
+                fra_2 = 10'b10000000;
+                result_expected_multi = 16'h0000;
+            end
+        endtask
+
+endmodule
