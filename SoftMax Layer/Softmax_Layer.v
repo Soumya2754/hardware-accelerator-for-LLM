@@ -1,9 +1,7 @@
-`timescale 1ns / 1ps
-
 module Softmax_Layer (
     input [1023:0][15:0] inputData, // Array of 1024 elements, each 16 bits
     output [1023:0][15:0] outData,  // Array of 1024 elements, each 16 bits
-    output [15:0] chosenProbability
+    output [15:0] chosenProbability // Chosen probability
 );
 
 localparam sizeArr = 1024;
@@ -15,6 +13,7 @@ wire [15:0] total1;
 wire [15:0] recp;
 wire [1023:0][15:0] exponentialArr2;
 wire [1023:0][15:0] exponentialArr3;
+wire [1023:0][15:0] Output_Arr;
 wire [1023:0][15:0] max1;
 
 genvar i;
@@ -30,14 +29,18 @@ generate
     end
 endgenerate
 
-// Calculate sum of exponentials
-Accumulator1 #(
-    .size_Of_Array(sizeArr),
-    .DATA_WIDTH(width)
-) exponentialAddition (
-    .Input_Arr(exponentialArr1),
-    .Output(total1)
-);
+// Accumulator for summing exponentials
+generate
+    for (i = 0; i < sizeArr; i = i + 1) begin : add
+        add add1 (
+            .A_FP(Output_Arr[i]),
+            .B_FP(exponentialArr1[i]),
+            .out(Output_Arr[i+1])
+        );
+    end
+endgenerate
+
+assign total1 = Output_Arr[sizeArr];
 
 // Calculate reciprocal of the sum of exponentials
 reciporical r1 (
@@ -78,6 +81,7 @@ generate
         );
     end
 endgenerate
+
 assign chosenProbability = max1[sizeArr-1];
 
 endmodule
