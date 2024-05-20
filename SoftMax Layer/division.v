@@ -1,23 +1,29 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-//By: Basant Loay Abdalla
-//////////////////////////////////////////////////////////////////////////////////
-// The division module based on Newton Raphson method to calculate reciporical of divisor
-// then multiply reciporical by Dividend
-module division(dividend,divsor,outDiv);
-localparam [31:0] one=32'b00111111100000000000000000000000;
-input  [31:0] dividend ;
-input  [31:0] divsor;
-output [31:0] outDiv;
-wire [31:0] reciporical2;
 
-reciporical r1(.numerator(one),
-               .divisor(divsor),
-               .reciporical1(reciporical2)); 
-                                                    
-mul mulReciporical(.flp_a(dividend),
-                   .flp_b(reciporical2),
-                   .sign(outDiv[31]),
-                   .exponent(outDiv[30:23]),
-                   .prod(outDiv[22:0]));
+module division (
+    input [15:0] dividend,
+    input [15:0] divisor,
+    output reg [15:0] outDiv
+);
+
+localparam [15:0] one = 16'b0011111110000000;
+
+reg [15:0] reciporical2;
+
+// Calculate reciprocal of the divisor
+reciporical r1 (
+    .numerator(one),
+    .divisor(divisor),
+    .reciporical1(reciporical2)
+);
+
+// Multiply dividend by the reciprocal
+mul mulReciporical (
+    .flp_a(dividend),
+    .flp_b(reciporical2),
+    .sign(outDiv[15]),
+    .exponent(outDiv[14:11]),
+    .prod(outDiv[10:0])
+);
+
 endmodule
