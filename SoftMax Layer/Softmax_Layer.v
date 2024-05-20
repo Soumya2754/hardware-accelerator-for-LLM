@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module Softmax_Layer (
     input [1023:0][15:0] inputData, // Array of 1024 elements, each 16 bits
     output [1023:0][15:0] outData,  // Array of 1024 elements, each 16 bits
