@@ -18,8 +18,8 @@ always @* begin
         prod = 0;
     end else begin
         sign = flp_a[15] ^ flp_b[15];
-        x = {1'b1, flp_a[10:0]} * {1'b1, flp_b[10:0]};
-        exponent = flp_a[14:11] + flp_b[14:11] - 15 + 1;
+        x = {1'b1, flp_a[9:0]} * {1'b1, flp_b[9:0]};
+        exponent = flp_a[14:10] + flp_b[14:10] - 15 + 1;
         if (x[20]) begin
             x = x >> 1;
             exponent = exponent + 1;
