@@ -22,8 +22,8 @@ mul mulReciporical (
     .flp_a(dividend),
     .flp_b(reciporical2),
     .sign(outDiv[15]),
-    .exponent(outDiv[14:11]),
-    .prod(outDiv[10:0])
+    .exponent(outDiv[14:10]),
+    .prod(outDiv[9:0])
 );
 
 endmodule
