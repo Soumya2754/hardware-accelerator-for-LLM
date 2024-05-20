@@ -51,13 +51,6 @@ reciporical r1 (
     .reciporical1(recp)
 );
 
-// Distribute the reciprocal value across the array
-generate
-    for (i = 1; i < sizeArr; i = i + 1) begin
-        assign recp[i+1] = recp[i];
-    end
-endgenerate
-
 // Normalize exponentials to get softmax probabilities
 generate
     for (i = 0; i < sizeArr; i = i + 1) begin
