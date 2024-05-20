@@ -1,9 +1,10 @@
+
 `timescale 1ns / 1ps
 
 module maxValue (
     input [15:0] in1,
     input [15:0] in2,
-    output reg [15:0] outmax
+    output [15:0] outmax
 );
 
 reg [15:0] max = 16'b0000000000000000;
