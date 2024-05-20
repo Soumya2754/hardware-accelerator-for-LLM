@@ -78,4 +78,3 @@ mul mulNumeratorDivisor (
 );
 
 endmodule
-
