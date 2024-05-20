@@ -18,8 +18,8 @@ mul mul1(
     .flp_a(D),
     .flp_b(X),
     .sign(term1[15]),
-    .exponent(term1[14:11]),
-    .prod(term1[10:0])
+    .exponent(term1[14:10]),
+    .prod(term1[9:0])
 );
 
 // Calculate term2: 2 - term1
@@ -30,8 +30,8 @@ mul mul2(
     .flp_a(X),
     .flp_b(term2),
     .sign(Xn[15]),
-    .exponent(Xn[14:11]),
-    .prod(Xn[10:0])
+    .exponent(Xn[14:10]),
+    .prod(Xn[9:0])
 );
 
 endmodule
