@@ -9,13 +9,18 @@ module mul (
 );
 
 reg [19:0] x;
-assign prod = x[19:10];
+
+always@(*)
+begin
+prod = x[19:10];
+end
+
 always @* begin
     if (flp_a == 0 || flp_b == 0) begin
         sign = 0;
         x = 0;
         exponent = 0;
-        prod = 0;
+       // prod = 0;
     end else begin
         sign = flp_a[15] ^ flp_b[15];
         x = {1'b1, flp_a[9:0]} * {1'b1, flp_b[9:0]};
