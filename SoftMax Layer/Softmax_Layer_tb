@@ -4,24 +4,26 @@ module Softmax_Layer_tb;
 
 // Define parameters
 localparam WIDTH = 16; // Width of each element in the array
-localparam SIZE = 1024; // Size of the array
+localparam SIZE = 10; // Size of the array
+bit clk = 0; // Clock signal
 
 // Define interface for communication with Softmax_Layer module
-interface Softmax_Layer_if;
-    logic [WIDTH-1:0] inputData[SIZE]; // Input data
-    logic [WIDTH-1:0] outData[SIZE]; // Output data
+interface Softmax_Layer_if(input bit clk);
+    logic [WIDTH-1:0] inputData[0:SIZE-1]; // Input data
+    logic [WIDTH-1:0] outData[0:SIZE-1]; // Output data
     logic [WIDTH-1:0] chosenProbability; // Chosen probability
 
     // Clocking block for synchronization
     clocking cb @(posedge clk);
-        input inputData; // Input data signal
-        output outData; // Output data signal
-        output chosenProbability; // Chosen probability signal
+        
+        input outData; // Output data signal
+        input chosenProbability; // Chosen probability signal
+        output inputData; // Input data signal
     endclocking
 endinterface
 
 // Instantiate interface
-Softmax_Layer_if softmax_if();
+Softmax_Layer_if softmax_if(clk);
 
 // Instantiate Softmax_Layer module with interface
 Softmax_Layer softmax_layer (
@@ -31,7 +33,6 @@ Softmax_Layer softmax_layer (
 );
 
 // Clock generation
-reg clk = 0; // Clock signal
 always #5 clk = ~clk; // Toggle clock every 5 time units
 
 // Stimulus
@@ -39,25 +40,25 @@ initial begin
     // Randomized testing
     integer i, j;
     integer max_val, exp_sum;
-    real [WIDTH-1:0] exp_arr[SIZE], expected_prob[SIZE];
+    logic [WIDTH-1:0] exp_arr[0:SIZE-1], expected_prob[0:SIZE-1];
     
     // Generate random input data array
     for (i = 0; i < SIZE; i = i + 1) begin
         for (j = 0; j < WIDTH; j = j + 1) begin
-            softmax_if.cb.inputData[i][j] = $urandom_range(0, (2**WIDTH)-1);
+            softmax_if.inputData[i][j] = $urandom_range(0, (2**WIDTH)-1);
         end
     end
 
     // Calculate expected probabilities using reference implementation
     for (i = 0; i < SIZE; i = i + 1) begin
-        max_val = softmax_if.cb.inputData[i][0];
+        max_val = softmax_if.inputData[i][0];
         for (j = 1; j < WIDTH; j = j + 1) begin
-            if (softmax_if.cb.inputData[i][j] > max_val)
-                max_val = softmax_if.cb.inputData[i][j];
+            if (softmax_if.inputData[i][j] > max_val)
+                max_val = softmax_if.inputData[i][j];
         end
         exp_sum = 0;
         for (j = 0; j < WIDTH; j = j + 1) begin
-            exp_arr[j] = softmax_if.cb.inputData[i][j] - max_val;
+            exp_arr[j] = softmax_if.inputData[i][j] - max_val;
             exp_sum = exp_sum + $exp(exp_arr[j]);
         end
         for (j = 0; j < WIDTH; j = j + 1) begin
@@ -67,7 +68,7 @@ initial begin
 
     // Apply input data and observe output data
     for (i = 0; i < SIZE; i = i + 1) begin
-        softmax_if.cb.inputData[i] <= softmax_if.cb.inputData[i];
+        softmax_if.inputData[i] <= softmax_if.inputData[i];
         #1;
     end
 
@@ -77,8 +78,8 @@ initial begin
     // Compare output data with expected probabilities
     for (i = 0; i < SIZE; i = i + 1) begin
         for (j = 0; j < WIDTH; j = j + 1) begin
-            if (softmax_if.cb.outData[i][j] !== expected_prob[j])
-                $display("Mismatch at index %d: Expected: %f, Actual: %f", i, expected_prob[j], softmax_if.cb.outData[i][j]);
+            if (softmax_if.outData[i][j] !== expected_prob[j])
+                $display("Mismatch at index %d: Expected: %f, Actual: %f", i, expected_prob[j], softmax_if.outData[i][j]);
         end
     end
 
