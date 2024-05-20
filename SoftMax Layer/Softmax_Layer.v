@@ -1,22 +1,22 @@
 `timescale 1ns / 1ps
 
 module Softmax_Layer (
-    input [1023:0][15:0] inputData, // Array of 1024 elements, each 16 bits
-    output [1023:0][15:0] outData,  // Array of 1024 elements, each 16 bits
+    input [10:0][15:0] inputData, // Array of 1024 elements, each 16 bits
+    output [10:0][15:0] outData,  // Array of 1024 elements, each 16 bits
     output [15:0] chosenProbability // Chosen probability
 );
 
-localparam sizeArr = 1024;
+localparam sizeArr = 10;
 localparam width = 16;
 localparam one = 16'b0011110000000000; // Example value for "one" in 16-bit float representation
 
-wire [1023:0][15:0] exponentialArr1;
+wire [10:0][15:0] exponentialArr1;
 wire [15:0] total1;
 wire [15:0] recp;
-wire [1023:0][15:0] exponentialArr2;
-wire [1023:0][15:0] exponentialArr3;
-wire [1023:0][15:0] Output_Arr;
-wire [1023:0][15:0] max1;
+wire [10:0][15:0] exponentialArr2;
+wire [10:0][15:0] exponentialArr3;
+wire [10:0][15:0] Output_Arr;
+wire [10:0][15:0] max1;
 
 genvar i;
 
