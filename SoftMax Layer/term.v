@@ -4,8 +4,8 @@ module term (
     input [15:0] originalNum,
     input [15:0] poweredNum,
     input [15:0] reciporical,
-    output reg [15:0] outPower,
-    output reg [15:0] outTerm
+    output [15:0] outPower,
+    output [15:0] outTerm
 );
 
 wire [15:0] t;
