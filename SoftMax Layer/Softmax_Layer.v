@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
 
 module Softmax_Layer (
-    input [10:0][15:0] inputData, // Array of 1024 elements, each 16 bits
-    output [10:0][15:0] outData,  // Array of 1024 elements, each 16 bits
+    input [15:0] inputData [9:0], // Array of 1024 elements, each 16 bits
+    output [15:0] outData [9:0],  // Array of 1024 elements, each 16 bits
     output [15:0] chosenProbability // Chosen probability
 );
 
@@ -10,13 +10,13 @@ localparam sizeArr = 10;
 localparam width = 16;
 localparam one = 16'b0011110000000000; // Example value for "one" in 16-bit float representation
 
-wire [10:0][15:0] exponentialArr1;
+wire [15:0] exponentialArr1[9:0];
 wire [15:0] total1;
 wire [15:0] recp;
-wire [10:0][15:0] exponentialArr2;
-wire [10:0][15:0] exponentialArr3;
-wire [10:0][15:0] Output_Arr;
-wire [10:0][15:0] max1;
+wire [15:0] exponentialArr2 [9:0];
+wire [15:0] exponentialArr3 [9:0];
+wire [15:0] Output_Arr [9:0];
+wire [15:0] max1 [9:0];
 
 genvar i;
 
@@ -25,7 +25,7 @@ generate
     for (i = 0; i < sizeArr; i = i + 1) begin
         exponential E (
             .inputX(inputData[i]),
-            .outputY(exponentialArr1[i])
+            .temp(exponentialArr1[i])
         );
         assign exponentialArr2[i] = exponentialArr1[i];
     end
@@ -37,12 +37,12 @@ generate
         add add1 (
             .A_FP(Output_Arr[i]),
             .B_FP(exponentialArr1[i]),
-            .out(Output_Arr[i+1])
+            .out(Output_Arr[i])
         );
     end
 endgenerate
 
-assign total1 = Output_Arr[sizeArr];
+assign total1 = Output_Arr[sizeArr-1];
 
 // Calculate reciprocal of the sum of exponentials
 reciporical r1 (
