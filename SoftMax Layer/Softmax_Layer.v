@@ -58,8 +58,8 @@ generate
             .flp_a(exponentialArr2[i]),
             .flp_b(recp[i]),
             .sign(outData[i][width-1]),
-            .exponent(outData[i][14:11]),
-            .prod(outData[i][10:0])
+            .exponent(outData[i][14:10]),
+            .prod(outData[i][9:0])
         );
         assign exponentialArr3[i] = outData[i];
     end
