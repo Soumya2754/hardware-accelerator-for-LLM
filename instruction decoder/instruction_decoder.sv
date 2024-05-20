@@ -1,0 +1,142 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 16.05.2024 16:50:34
+// Design Name: 
+// Module Name: instruction_decoder
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module instruction_decoder (
+    input  clk,
+    input  rst_n,
+    input  [2:0] instruction, // Input port for instruction decoding
+   // output  enable_matrix_mult, // Output port to control matrix multiplication module
+   // output  enable_layer_norm, // Output port to control layer normalization module
+    output  [15:0] A [0:1023], // Output wire for matrix A
+    input  [15:0] B [0:1023], // Input wire for matrix B
+    input  [15:0] C [0:1023], // Input wire for matrix C
+    input [15:0] num1, num2, num_1, num_2,
+    //output reg [15:0] result,
+    output overflow, //overflow flag
+    output zero, //zero flag
+    output NaN, //Not a Number flag
+    output reg precisionLost
+);
+
+wire clk_matrix, clk_norm;
+reg en_norm, en_matrix, en_multi, en_add;
+
+assign clk_matrix = clk & en_matrix;
+assign clk_norm = clk & en_norm;
+
+// Constants for instruction decoding
+parameter MATRIX_MULT_INSTRUCTION = 3'b000; // Example matrix multiplication instruction
+parameter LAYER_NORM_INSTRUCTION = 3'b001; // Example layer normalization instruction
+
+// Declare wires to connect matrix multiplication module outputs to layer normalization module inputs
+wire [15:0] matrix_mult_output [0:1023];
+wire [15:0] layer_norm_input [0:1023]; // Assuming 3x8 matrix as input to layer normalization
+wire [15:0] output_tensor [0:1023]; // Output tensor from layer normalization module
+
+// Instantiate the matrix multiplication module
+matrix_multiplication matrix_mult_inst (
+    .clk(clk_matrix),
+    .rst_n(rst_n),
+    .B(B),
+    .C(C),
+    .A(matrix_mult_output)
+);
+
+// Instantiate the layer normalization module
+layer_normalization_inference layer_norm_inst (
+    .clk(clk_norm),
+    .input_tensor(layer_norm_input),
+    .output_tensor(output_tensor) // Connect output tensor port
+);
+
+wire [15:0] mult_result;
+wire mult_overflow, mult_zero, mult_NaN, mult_precisionLost;
+float_multi float_multi_inst (
+                    .en(en_add),
+                    .num1(num_1),
+                    .num2(num_2),
+                    .result(mult_result),
+                    .overflow(mult_overflow),
+                    .zero(mult_zero),
+                    .NaN(mult_NaN),
+                    .precisionLost(mult_precisionLost)
+                    );
+
+wire [15:0] add_result;
+wire add_overflow, add_zero, add_NaN, add_precisionLost;
+float_adder float_adder_inst (
+                    .en(en_multi),
+                    .num1(num1),
+                    .num2(num2),
+                    .result(add_result),
+                    .overflow(add_overflow),
+                    .zero(add_zero),
+                    .NaN(add_NaN),
+                    .precisionLost(add_precisionLost)
+                );
+
+// Implement instruction decoding logic
+// Example: assign enable_matrix_mult = (instruction == MATRIX_MULT_INSTRUCTION);
+// Example: assign enable_layer_norm = (instruction == LAYER_NORM_INSTRUCTION);
+//assign enable_matrix_mult = (instruction == MATRIX_MULT_INSTRUCTION);
+//assign enable_layer_norm = (instruction == LAYER_NORM_INSTRUCTION);
+
+always@(*)
+    begin
+        case(instruction)
+            3'b000: 
+            begin
+                en_matrix = 1;
+                en_norm = en_norm; 
+                en_multi = en_multi;
+                en_add = en_add;
+           end
+           3'b001: 
+            begin
+                en_matrix = en_matrix;
+                en_norm = 1; 
+                en_multi = en_multi;
+                en_add = en_add;
+           end
+           3'b010: 
+            begin
+                en_matrix = en_matrix;
+                en_norm = en_norm; 
+                en_multi = 1;
+                en_add = en_add;
+           end
+           3'b011: 
+            begin
+                en_matrix = en_matrix;
+                en_norm = en_norm; 
+                en_multi = en_multi;
+                en_add = 1;
+           end
+        endcase
+    end
+// Connect inputs and outputs of matrix multiplication module
+// Example: .A(A),
+// Example: .B(B),
+// Example: .C(C)
+assign A = matrix_mult_output;
+
+endmodule
